@@ -14,6 +14,7 @@
       justify-content: center;
       height: 100vh;
       font-family: sans-serif;
+      position: relative;
     }
     canvas {
       background: #fff;
@@ -56,6 +57,31 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
+    /* Game over screen style */
+    #gameOverScreen {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      width: 100%;
+      max-width: 400px;
+      padding: 30px 20px;
+      border-radius: 12px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+    #gameOverCard h2 {
+      margin-top: 0;
+      font-size: 28px;
+      color: #ffeb3b;
+    }
+    #gameOverCard p {
+      margin: 10px 0;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
@@ -68,6 +94,15 @@
 <canvas id="game" width="400" height="500"></canvas>
 <button id="tapBtn">Terbang!</button>
 <button id="restartBtn">Main Lagi</button>
+
+<!-- Game Over Screen -->
+<div id="gameOverScreen">
+  <div id="gameOverCard">
+    <h2>Game Over</h2>
+    <p id="finalScore"></p>
+    <p id="finalTime"></p>
+  </div>
+</div>
 
 <script>
 const canvas = document.getElementById("game");
@@ -97,6 +132,8 @@ let frame = 0;
 let score = 0;
 let gameOver = false;
 let playerName = "";
+let startTime = null;
+let totalTime = 0;
 
 function resetGame() {
   bird.y = 200;
@@ -105,7 +142,9 @@ function resetGame() {
   frame = 0;
   score = 0;
   gameOver = false;
+  startTime = Date.now();
   document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("gameOverScreen").style.display = "none";
   update();
 }
 
@@ -170,6 +209,11 @@ function endGame() {
   gameOverSound.currentTime = 0;
   gameOverSound.play();
 
+  totalTime = Math.floor((Date.now() - startTime) / 1000);
+
+  document.getElementById("finalScore").textContent = `Score: ${score} (${playerName})`;
+  document.getElementById("finalTime").textContent = `Waktu bermain: ${totalTime} detik`;
+  document.getElementById("gameOverScreen").style.display = "block";
   document.getElementById("restartBtn").style.display = "inline-block";
 }
 
