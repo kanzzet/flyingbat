@@ -21,8 +21,9 @@
       width: 100%;
       max-width: 400px;
       height: auto;
+      display: none;
     }
-    #tapBtn {
+    #tapBtn, #restartBtn {
       margin-top: 15px;
       padding: 12px 30px;
       font-size: 18px;
@@ -32,13 +33,41 @@
       border-radius: 8px;
       cursor: pointer;
       user-select: none;
+      display: none;
+    }
+    #startScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #playerName {
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #aaa;
+    }
+    #startBtn {
+      padding: 10px 25px;
+      font-size: 16px;
+      background-color: green;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
+<div id="startScreen">
+  <input type="text" id="playerName" placeholder="Masukkan nama kamu" />
+  <button id="startBtn">Play</button>
+</div>
+
 <canvas id="game" width="400" height="500"></canvas>
 <button id="tapBtn">Terbang!</button>
+<button id="restartBtn">Main Lagi</button>
 
 <script>
 const canvas = document.getElementById("game");
@@ -53,36 +82,41 @@ let bird = {
   image: new Image()
 };
 
-bird.image.src = "https://files.catbox.moe/703esa.png";  // URL gambar burung
+bird.image.src = "https://files.catbox.moe/703esa.png";
+let pipeImage = new Image();
+pipeImage.src = "https://files.catbox.moe/g4hnbg.png";
+const gameOverSound = new Audio("https://files.catbox.moe/fzt75i.mp3");
+gameOverSound.load();
+gameOverSound.volume = 1.0;
 
-const gravity = 0.5;
-const lift = -1.5;
+let gravity = 0.5;
+let lift = -1.5;
 let isFlying = false;
 let pipes = [];
 let frame = 0;
 let score = 0;
 let gameOver = false;
+let playerName = "";
 
-const gameOverSound = new Audio("https://files.catbox.moe/fzt75i.mp3");  // Suara game over
-
-let pipeImage = new Image();
-pipeImage.src = "https://files.catbox.moe/g4hnbg.png"; // URL gambar pipa
-
-bird.image.onload = function() {
-  update();  // Mulai game setelah gambar burung dimuat
-};
+function resetGame() {
+  bird.y = 200;
+  bird.velocity = 0;
+  pipes = [];
+  frame = 0;
+  score = 0;
+  gameOver = false;
+  document.getElementById("restartBtn").style.display = "none";
+  update();
+}
 
 function update() {
   if (gameOver) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Bird control
-  if (isFlying) {
-    bird.velocity += lift;
-  }
+  if (isFlying) bird.velocity += lift;
   bird.velocity += gravity;
-  bird.velocity *= 0.9; // drag
+  bird.velocity *= 0.9;
   bird.y += bird.velocity;
 
   if (bird.y + bird.height > canvas.height || bird.y < 0) {
@@ -90,23 +124,16 @@ function update() {
     return;
   }
 
-  // Pipes
   if (frame % 90 === 0) {
     let gap = 120;
     let top = Math.random() * (canvas.height - gap - 100);
-    pipes.push({
-      x: canvas.width,
-      y: top,
-      width: 50,
-      gap: gap
-    });
+    pipes.push({ x: canvas.width, y: top, width: 50, gap: gap });
   }
 
   for (let i = 0; i < pipes.length; i++) {
     let pipe = pipes[i];
     pipe.x -= 2;
 
-    // Draw pipe using the image
     ctx.drawImage(pipeImage, pipe.x, 0, pipe.width, pipe.y);
     ctx.drawImage(pipeImage, pipe.x, pipe.y + pipe.gap, pipe.width, canvas.height - (pipe.y + pipe.gap));
 
@@ -127,13 +154,11 @@ function update() {
 
   pipes = pipes.filter(p => p.x + p.width > 0);
 
-  // Draw bird (menggunakan gambar)
   ctx.drawImage(bird.image, bird.x, bird.y, bird.width, bird.height);
 
-  // Draw score
   ctx.fillStyle = "#000";
-  ctx.font = "20px Arial";
-  ctx.fillText("Score: " + score, 10, 25);
+  ctx.font = "18px Arial";
+  ctx.fillText(`Score: ${score} (${playerName})`, 10, 25);
 
   frame++;
   requestAnimationFrame(update);
@@ -141,35 +166,52 @@ function update() {
 
 function endGame() {
   gameOver = true;
-  gameOverSound.play(); // Memainkan suara game over
-  alert("Game Over! Skor kamu: " + score);
-  location.reload();
+  gameOverSound.pause();
+  gameOverSound.currentTime = 0;
+  gameOverSound.play();
+
+  document.getElementById("restartBtn").style.display = "inline-block";
 }
 
-// Event for button
-const button = document.getElementById("tapBtn");
-button.addEventListener("touchstart", e => {
+document.getElementById("tapBtn").addEventListener("mousedown", () => isFlying = true);
+document.getElementById("tapBtn").addEventListener("mouseup", () => isFlying = false);
+document.getElementById("tapBtn").addEventListener("mouseleave", () => isFlying = false);
+document.getElementById("tapBtn").addEventListener("touchstart", e => {
   e.preventDefault();
   isFlying = true;
 });
-button.addEventListener("touchend", e => {
+document.getElementById("tapBtn").addEventListener("touchend", e => {
   e.preventDefault();
   isFlying = false;
 });
-button.addEventListener("mousedown", () => isFlying = true);
-button.addEventListener("mouseup", () => isFlying = false);
-button.addEventListener("mouseleave", () => isFlying = false);
 
-// Canvas tap for flying
 canvas.addEventListener("touchstart", () => isFlying = true);
 canvas.addEventListener("touchend", () => isFlying = false);
 
-// Keyboard (optional)
 document.addEventListener("keydown", e => {
   if (e.code === "Space" || e.key === "ArrowUp") isFlying = true;
 });
 document.addEventListener("keyup", e => {
   if (e.code === "Space" || e.key === "ArrowUp") isFlying = false;
+});
+
+document.getElementById("startBtn").addEventListener("click", () => {
+  const nameInput = document.getElementById("playerName");
+  if (!nameInput.value.trim()) {
+    alert("Masukkan nama terlebih dahulu.");
+    return;
+  }
+
+  playerName = nameInput.value.trim();
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  document.getElementById("tapBtn").style.display = "inline-block";
+
+  resetGame();
+});
+
+document.getElementById("restartBtn").addEventListener("click", () => {
+  resetGame();
 });
 </script>
 </body>
